@@ -12,6 +12,17 @@
    - name: setup index.html
      template: src=files/nginx/index.html.j2 dest=/usr/share/nginx/html/index.html
 
+   - ufw: state=enabled policy=deny
+
+   - ufw: rule=allow name=OpenSSH
+
+   - name: HTTP only from load balancer port
+     ufw: rule=allow port=80 proto=tcp src={{item}}
+     with_items: "{{groups['loadbalancer']}}"
+
+   - name: restart UFW
+     ufw: state=reloaded
+
   handlers:
   - name: Start Nginx
     service: name=nginx state=started
