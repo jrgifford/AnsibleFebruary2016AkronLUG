@@ -1,0 +1,38 @@
+---
+- hosts: web
+  tasks:
+   - name: Install Nginx
+     apt: pkg=nginx state=installed
+     notify:
+     - Start Nginx
+   - name: Setup Nginx config
+     template: src=files/nginx/nginx.conf dest=/etc/nginx/sites-available/default
+     notify:
+      - Restart Nginx
+   - name: setup index.html
+     template: src=files/nginx/index.html.j2 dest=/usr/share/nginx/html/index.html
+
+  handlers:
+  - name: Start Nginx
+    service: name=nginx state=started
+  - name: Restart Nginx
+    service: name=nginx state=restarted
+
+- hosts: loadbalancer
+  tasks:
+  - name: setup haproxy ppa
+    apt_repository: repo='ppa:vbernat/haproxy-1.6'
+  - name: install haproxy
+    apt: pkg=haproxy state=installed
+    notify:
+    - Start Haproxy
+  - name: Setup Haproxy config
+    template: src=files/haproxy/haproxy.conf.j2 dest=/etc/haproxy/haproxy.cfg owner=root group=root mode=0644
+    notify: Restart Haproxy
+
+  handlers:
+   - name: Start Haproxy
+     service: name=haproxy state=started
+   - name: Restart Haproxy
+     service: name=haproxy state=restarted
+
